@@ -102,7 +102,7 @@ Function Invoke-MFASweep{
     
         Write-Host "[*] Checking if ADFS configured..."
 
-        $ADFSCheck = Invoke-WebRequest -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
+        $ADFSCheck = Invoke-WebRequest -UseBasicParsing -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
         [xml]$ADFSXML = $ADFSCheck.Content
         [uri]$RootADFSURL = $ADFSXML.RealmInfo.AuthUrl
         $ADFSDomain = $RootADFSURL.Host
@@ -326,7 +326,7 @@ Function Invoke-M365WebPortalAuth{
     }
     Write-Host "---------------- Microsoft 365 Web Portal w/ ($UAtype) User Agent ----------------"
     Write-Host -ForegroundColor Yellow "[*] Authenticating to Microsoft 365 Web Portal using a ($UAtype) user agent..."
-$SessionRequest = Invoke-WebRequest -Uri 'https://outlook.office365.com' -SessionVariable o365 -UserAgent "$UserAgent"
+$SessionRequest = Invoke-WebRequest -UseBasicParsing -Uri 'https://outlook.office365.com' -SessionVariable o365 -UserAgent "$UserAgent"
 
 # Extract the 'ctx' value from the response
 $partialctx = [regex]::Matches($SessionRequest.Content, 'urlLogin":".*?"').Value
@@ -363,7 +363,7 @@ $Canary = [regex]::Matches($SessionRequest.Content, 'canary":"(.*?)"').Groups[1]
     }
     $JSONForm = $Userform | ConvertTo-Json
     
-    $UserNameRequest = Invoke-WebRequest -Uri ("https://login.microsoftonline.com/common/GetCredentialType?mkt=en-US") -WebSession $o365 -Method POST -Body $JSONForm -UserAgent "$UserAgent"
+    $UserNameRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://login.microsoftonline.com/common/GetCredentialType?mkt=en-US") -WebSession $o365 -Method POST -Body $JSONForm -UserAgent "$UserAgent"
 
 
     $AuthBody = @{i13='0';
@@ -397,7 +397,7 @@ $Canary = [regex]::Matches($SessionRequest.Content, 'canary":"(.*?)"').Groups[1]
     i19='198733';
     }
 
-    $AuthRequest = Invoke-WebRequest -Uri ("https://login.microsoftonline.com/common/login") -WebSession $o365 -Method POST -Body $AuthBody -UserAgent "$UserAgent"
+    $AuthRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://login.microsoftonline.com/common/login") -WebSession $o365 -Method POST -Body $AuthBody -UserAgent "$UserAgent"
 
 
 
@@ -615,7 +615,7 @@ Function Invoke-GraphAPIAuth{
     # Setting up the web request
     $BodyParams = @{'resource' = $Resource; 'client_id' = $ClientId ; 'client_info' = '1' ; 'grant_type' = 'password' ; 'username' = $username ; 'password' = $password ; 'scope' = 'openid'}
     $PostHeaders = @{'Accept' = 'application/json'; 'Content-Type' =  'application/x-www-form-urlencoded'}
-    $webrequest = Invoke-WebRequest $URL/common/oauth2/token -Method Post -Headers $PostHeaders -Body $BodyParams -ErrorVariable RespErr 
+    $webrequest = Invoke-WebRequest -UseBasicParsing $URL/common/oauth2/token -Method Post -Headers $PostHeaders -Body $BodyParams -ErrorVariable RespErr 
 
     # If we get a 200 response code it's a valid cred
     If ($BruteClients){
@@ -741,7 +741,7 @@ Function Invoke-AzureManagementAPIAuth{
     # Setting up the web request
     $BodyParams = @{'resource' = 'https://management.core.windows.net'; 'client_id' = '1950a258-227b-4e31-a9cf-717495945fc2' ; 'grant_type' = 'password' ; 'username' = $username ; 'password' = $password ; 'scope' = 'openid'}
     $PostHeaders = @{'Accept' = 'application/json'; 'Content-Type' =  'application/x-www-form-urlencoded'}
-    $webrequest = Invoke-WebRequest $URL/Common/oauth2/token -Method Post -Headers $PostHeaders -Body $BodyParams -ErrorVariable RespErr 
+    $webrequest = Invoke-WebRequest -UseBasicParsing $URL/Common/oauth2/token -Method Post -Headers $PostHeaders -Body $BodyParams -ErrorVariable RespErr 
 
     # If we get a 200 response code it's a valid cred
     If ($webrequest.StatusCode -eq "200"){
@@ -847,7 +847,7 @@ Function Invoke-O365ActiveSyncAuth{
     $Headers = @{'Authorization' = "Basic $($EncodeUsernamePassword)"}
     
     try {
-	    $easlogin = Invoke-WebRequest -Uri $EASURL -Headers $Headers -Method Get -ErrorAction Stop
+	    $easlogin = Invoke-WebRequest -UseBasicParsing -Uri $EASURL -Headers $Headers -Method Get -ErrorAction Stop
         }catch {
             $resp = $_.Exception.Response.GetResponseStream()
             $reader = New-Object System.IO.StreamReader($resp)
@@ -890,7 +890,7 @@ Function Invoke-ADFSAuth{
 
     Write-Host "[*] Getting ADFS URL..."
 
-        $ADFSCheck = Invoke-WebRequest -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
+        $ADFSCheck = Invoke-WebRequest -UseBasicParsing -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
         [xml]$ADFSXML = $ADFSCheck.Content
         If($adfsxml.RealmInfo.NameSpaceType -like "Federated"){
             If($ADFSXML.RealmInfo.AuthUrl){
@@ -911,14 +911,14 @@ Function Invoke-ADFSAuth{
   
 
     Write-Host -ForegroundColor Yellow ("[*] Authenticating to On-Prem ADFS Portal at: " + $ADFSXML.RealmInfo.AuthUrl)
-    $ADFSCheck = Invoke-WebRequest -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
+    $ADFSCheck = Invoke-WebRequest -UseBasicParsing -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=$UserName&xml=1"
     [xml]$ADFSXML = $ADFSCheck.Content
 
     $adfsurl = $ADFSXML.RealmInfo.AuthUrl
     [uri]$RootADFSURL = $ADFSXML.RealmInfo.AuthUrl
     $ADFSDomain = $RootADFSURL.Host
 
-    $SessionRequest = Invoke-WebRequest -Uri $adfsurl -SessionVariable adfs -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
+    $SessionRequest = Invoke-WebRequest -UseBasicParsing -Uri $adfsurl -SessionVariable adfs -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
     $userform = $SessionRequest.Forms[0]
     $userform.Fields["UserName"] = $Username
     $userform.Fields["Password"] = $Password
@@ -927,7 +927,7 @@ Function Invoke-ADFSAuth{
 
     $FullADFSURL = ("https://" + $ADFSDomain + $adfsauthpath)
 
-    $ADFSAuthAttempt= Invoke-WebRequest -Uri $FullADFSURL -WebSession $adfs -Method POST -Body $userform.Fields -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
+    $ADFSAuthAttempt= Invoke-WebRequest -UseBasicParsing -Uri $FullADFSURL -WebSession $adfs -Method POST -Body $userform.Fields -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome)
 
     if ($adfs.Cookies.GetCookies($FullADFSURL).Name -like "MSISAUTH")
     {
@@ -943,7 +943,7 @@ Function Invoke-ADFSAuth{
             $i--
         } while ($i -gt 0)
 
-        $ADFSSRFAuth = Invoke-WebRequest -Uri "https://login.microsoftonline.com/login.srf" -WebSession $adfsmsonline -Method POST -Body $ADFSAuthAttempt.Forms[0].Fields -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome) -MaximumRedirection 0 
+        $ADFSSRFAuth = Invoke-WebRequest -UseBasicParsing -Uri "https://login.microsoftonline.com/login.srf" -WebSession $adfsmsonline -Method POST -Body $ADFSAuthAttempt.Forms[0].Fields -UserAgent ([Microsoft.PowerShell.Commands.PSUserAgent]::Chrome) -MaximumRedirection 0 
         
         if ($ADFSSRFAuth.Content -match "Stay signed in"){
         Write-Host -ForegroundColor Cyan "[**] It appears there is no MFA for this account."
